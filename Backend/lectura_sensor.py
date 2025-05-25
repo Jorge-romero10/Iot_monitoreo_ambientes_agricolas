@@ -1,10 +1,10 @@
+from machine import Pin, ADC
+from utime import sleep
 import network
 import urequests
 import time
-import machine
-import dht
 
-# Configura WiFi
+# === CONFIGURACIÓN WIFI ===
 ssid = "TU_SSID"
 password = "TU_PASSWORD"
 
@@ -13,24 +13,49 @@ station.active(True)
 station.connect(ssid, password)
 
 while not station.isconnected():
-    time.sleep(1)
+    sleep(1)
 
-print("Conectado a WiFi:", station.ifconfig())
+print("✅ Conectado a WiFi:", station.ifconfig())
 
-# Sensor DHT11 o DHT22 en pin 15
-sensor = dht.DHT22(machine.Pin(15))
+# === ZONA HORARIA (UTC-5)
+TIMEZONE_OFFSET = -5 * 3600
 
-THINGSPEAK_API_KEY = "TU_WRITE_API_KEY"
-THINGSPEAK_URL = "https://api.thingspeak.com/update"
+# === FIREBASE ===
+firebase_base_url = "https://data-real-time-9d86e-default-rtdb.firebaseio.com/sensors"
 
+# === SENSOR ===
+temp = ADC(Pin(27))  # GP27
+pot = ADC(Pin(26)) #GP26
+
+# === TIMESTAMP ===
+def get_timestamp():
+    t = time.time() + TIMEZONE_OFFSET
+    fecha = time.localtime(t)
+    return "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*fecha[0:6])
+
+# === LOOP ===
 while True:
-    sensor.measure()
-    temp = sensor.temperature()
+    temperatura = temp.read_u16()
+    potenciometro = pot.read_u16()
+    timestamp = get_timestamp()
+    print(f"[{timestamp}] Enviado: {temperatura}")
 
-    # Enviar datos a ThingSpeak
-    url = f"{THINGSPEAK_URL}?api_key={THINGSPEAK_API_KEY}&field1={temp}"
-    response = urequests.get(url)
-    print("Enviado:", temp, "Respuesta:", response.text)
-    response.close()
+    data = {
+        "temperatura": temperatura,
+        "humedad": 0,
+        "presion": potenciometro,
+        "luminosidad": 0,
+        "co2": 0
+   }
 
-    time.sleep(20)  # ThingSpeak permite 1 mensaje cada 15s (mínimo)
+    # Agrega cada dato con timestamp como clave única
+    url = f"{firebase_base_url}/{timestamp}.json"
+
+    try:
+        respuesta = urequests.put(url, json=data)
+        print("✅ Respuesta Firebase:", respuesta.text)
+        respuesta.close()
+    except Exception as e:
+        print("❌ Error al enviar:", e)
+
+    sleep(10)
