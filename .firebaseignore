@@ -1,0 +1,45 @@
+# Firebase Hosting ignore file
+# Archivos que NO se subirán a Firebase Hosting
+
+# Node modules y dependencias
+node_modules/
+
+# Archivos de configuración sensibles
+.env
+.env.local
+.env.*.local
+*-adminsdk-*.json
+
+# Archivos de desarrollo
+.git
+.gitignore
+firebase-debug.log
+*.md
+README.md
+CAMBIOS_REPORTE_PDF.md
+
+# Archivos fuente (si compilas a dist/)
+src/
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+postcss.config.js
+tailwind.config.js
+package.json
+package-lock.json
+yarn.lock
+
+# IDE y editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backend (si lo despliegas por separado)
+backend/
+functions/node_modules/
+
+# Archivos temporales
+*.local
+dist-ssr/
